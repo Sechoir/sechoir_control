@@ -26,9 +26,10 @@
         .sensor-name { font-weight: 600; text-align: left; }
         .value { font-weight: 700; font-family: monospace; font-size: 0.85rem; }
         .control-row { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 12px 0; }
-        .control-row label { width: 55px; font-weight: 600; font-size: 0.75rem; flex-shrink: 0; }
+        .control-row label { width: 75px; font-weight: 600; font-size: 0.75rem; flex-shrink: 0; }
         input[type="range"] { flex: 2; min-width: 100px; height: 4px; margin: 0; }
         input[type="range"]:disabled { opacity: 0.5; }
+        input[type="number"] { width: 100px; padding: 4px 6px; border-radius: 20px; border: 1px solid #cbd5e1; font-size: 0.75rem; text-align: center; }
         .slider-value { min-width: 32px; text-align: center; font-weight: 600; font-size: 0.75rem; flex-shrink: 0; }
         .feedback-value { min-width: 38px; text-align: center; background: #eef2ff; border-radius: 20px; padding: 2px 6px; font-size: 0.7rem; font-weight: 600; margin-left: 2px; flex-shrink: 0; }
         .feedback-label { font-size: 0.7rem; margin-left: 2px; flex-shrink: 0; }
@@ -37,13 +38,15 @@
         .log-box { background: #0f172a; color: #a5f3fc; font-family: monospace; font-size: 0.6rem; padding: 8px; border-radius: 16px; max-height: 120px; overflow-y: auto; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
         .lum-line { background: #f8fafc; border-radius: 20px; padding: 8px 12px; margin-top: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; }
+        .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 12px; background: #f8fafc; border-radius: 16px; padding: 10px; }
+        .sensor-grid div { font-size: 0.75rem; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="card">
         <div class="status-bar">
-            <h1>🌾 Séchoir unchained</h1>
+            <h1>🌾 Séchoir BLE</h1>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <button id="connectBtn">🔌 Connecter</button>
                 <span id="connStatus" class="badge">Déconnecté</span>
@@ -54,92 +57,54 @@
     <!-- Capteurs -->
     <div class="card">
         <h2>📊 Capteurs</h2>
-        <table id="sensorTable">
-            <thead>毛细<th>Capteur</th><th>🌡️ Temp.</th><th>💧 Humid.</th></tr></thead>
-            <tbody id="sensorBody"></tbody>
-        </table>
-        <div class="lum-line">
-            💡 Luminosité : <span id="lumValue">--</span> lumen
+        <table id="sensorTable"><thead><tr><th>Capteur</th><th>🌡️ Temp.</th><th>💧 Humid.</th></tr></thead><tbody id="sensorBody"></tbody></table>
+        <div class="lum-line">💡 Luminosité : <span id="lumValue">--</span> lumen</div>
+        <div class="sensor-grid">
+            <div>🔋 Vbat : <span id="vbatValue">--</span> V</div>
+            <div>🔌 Ibat : <span id="ibatValue">--</span> A</div>
+            <div>☀️ Vppv : <span id="vppvValue">--</span> V</div>
+            <div>⚡ Pppv : <span id="pppvValue">--</span> W</div>
+            <div>📊 État batterie : <span id="batStatusValue">--</span></div>
         </div>
     </div>
 
     <!-- Commandes -->
     <div class="card">
         <h2>🎛️ Commandes</h2>
-        <!-- Éteindre + Mode (une ligne) -->
-        <div class="control-row">
-            <label>🔘 Action</label>
-            <div class="inline-buttons">
-                <button id="offBtn" class="btn-off" disabled>Éteindre</button>
-                <button id="modeAutoBtn" class="mode-btn" disabled>Auto</button>
-                <button id="modeManualBtn" class="mode-btn" disabled>Manuel</button>
-            </div>
-            <span id="modeStatus" class="feedback-value">Mode: --</span>
+        <div class="control-row"><label>🔘 Action</label><div class="inline-buttons">
+            <button id="offBtn" class="btn-off" disabled>Éteindre</button>
+            <button id="modeAutoBtn" class="mode-btn" disabled>Auto</button>
+            <button id="modeManualBtn" class="mode-btn" disabled>Manuel</button>
+        </div><span id="modeStatus" class="feedback-value">Mode: --</span></div>
+
+        <div class="control-row" style="display: flex; gap: 20px; align-items: center;">
+            <div><label style="width:auto;">☀️ Seuil jour</label><input type="number" id="luxDayInput" step="50" style="width:100px;" disabled><span class="feedback-label">↺</span><span id="luxDayFeedback" class="feedback-value">--</span><span>lx</span></div>
+            <div><label style="width:auto;">🌙 Seuil nuit</label><input type="number" id="luxNightInput" step="50" style="width:100px;" disabled><span class="feedback-label">↺</span><span id="luxNightFeedback" class="feedback-value">--</span><span>lx</span></div>
         </div>
 
-        <!-- Trappes (une ligne) -->
-        <div class="control-row">
-            <label>🚪 Trappes</label>
-            <div class="inline-buttons">
-                <button id="trappesOpenBtn" class="trappes-btn" disabled>Ouvrir</button>
-                <button id="trappesCloseBtn" class="trappes-btn" disabled>Fermer</button>
-            </div>
-            <span id="trappesStatus" class="feedback-value">État: --</span>
-        </div>
+        <div class="control-row"><label>🚪 Trappes</label><div class="inline-buttons">
+            <button id="trappesOpenBtn" class="trappes-btn" disabled>Ouvrir</button>
+            <button id="trappesCloseBtn" class="trappes-btn" disabled>Fermer</button>
+        </div><span id="trappesStatus" class="feedback-value">État: --</span></div>
 
-        <!-- RES50W ON/OFF (une ligne) -->
-        <div class="control-row">
-            <label>⚡ RES50W</label>
-            <div class="inline-buttons">
-                <button id="res50wOnBtn" class="res-btn" disabled>Allumer</button>
-                <button id="res50wOffBtn" class="res-btn" disabled>Éteindre</button>
-            </div>
-            <span id="res50wStatus" class="feedback-value">État: --</span>
-        </div>
+        <div class="control-row"><label>⚡ RES50W</label><div class="inline-buttons">
+            <button id="res50wOnBtn" class="res-btn" disabled>Allumer</button>
+            <button id="res50wOffBtn" class="res-btn" disabled>Éteindre</button>
+        </div><span id="res50wStatus" class="feedback-value">État: --</span></div>
 
-        <!-- Ventilateur -->
-        <div class="control-row">
-            <label>🌀 Ventil.</label>
-            <input type="range" id="fanSlider" min="0" max="100" step="1" disabled>
-            <span id="fanSliderValue" class="slider-value">0</span>
-            <span class="feedback-label">↺</span>
-            <span id="fanFeedback" class="feedback-value">--</span><span style="font-size: 0.7rem;">%</span>
-        </div>
-
-        <!-- Store -->
-        <div class="control-row">
-            <label>📦 Store</label>
-            <input type="range" id="storeSlider" min="0" max="100" step="1" disabled>
-            <span id="storeSliderValue" class="slider-value">0</span>
-            <span class="feedback-label">↺</span>
-            <span id="storeFeedback" class="feedback-value">--</span><span style="font-size: 0.7rem;">%</span>
-        </div>
-
-        <!-- Consigne -->
-        <div class="control-row">
-            <label>🎯 Consigne</label>
-            <input type="range" id="consigneSlider" min="0" max="60" step="0.1" disabled>
-            <span id="consigneSliderValue" class="slider-value">22.5</span>
-            <span class="feedback-label">↺</span>
-            <span id="consigneFeedback" class="feedback-value">--</span><span style="font-size: 0.7rem;">°C</span>
-        </div>
+        <div class="control-row"><label>🌀 RES200W</label><input type="range" id="res200wSlider" min="0" max="100" step="1" disabled><span id="res200wSliderValue" class="slider-value">0</span><span class="feedback-label">↺</span><span id="res200wFeedback" class="feedback-value">--</span><span>%</span></div>
+        <div class="control-row"><label>🌀 Ventil.</label><input type="range" id="fanSlider" min="0" max="100" step="1" disabled><span id="fanSliderValue" class="slider-value">0</span><span class="feedback-label">↺</span><span id="fanFeedback" class="feedback-value">--</span><span>%</span></div>
+        <div class="control-row"><label>📦 Store</label><input type="range" id="storeSlider" min="0" max="100" step="1" disabled><span id="storeSliderValue" class="slider-value">0</span><span class="feedback-label">↺</span><span id="storeFeedback" class="feedback-value">--</span><span>%</span></div>
+        <div class="control-row"><label>🎯 Consigne</label><input type="range" id="consigneSlider" min="0" max="60" step="0.1" disabled><span id="consigneSliderValue" class="slider-value">22.5</span><span class="feedback-label">↺</span><span id="consigneFeedback" class="feedback-value">--</span><span>°C</span></div>
     </div>
 
-    <!-- Logs -->
-    <div class="card">
-        <div class="flex-between">
-            <h2>📜 Événements</h2>
-            <button id="clearLogBtn" style="background:#94a3b8; padding:3px 10px;">Effacer</button>
-        </div>
-        <div id="log" class="log-box"></div>
-    </div>
+    <div class="card"><div class="flex-between"><h2>📜 Événements</h2><button id="clearLogBtn" style="background:#94a3b8;">Effacer</button></div><div id="log" class="log-box"></div></div>
 </div>
 
 <script>
-    // === UUIDs (à adapter à votre ESP32) ===
+    // === UUIDs (à adapter) ===
     const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
     const COMMAND_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-
     const SENSORS = [
         { name: "Entrée",   tempUUID: "e1a0b001-0001-0001-0001-000000000001", humUUID: "e1a0b001-0001-0001-0001-000000000002" },
         { name: "Sortie",   tempUUID: "e2a0b001-0002-0002-0002-000000000001", humUUID: "e2a0b001-0002-0002-0002-000000000002" },
@@ -147,7 +112,6 @@
         { name: "Ech_E",    tempUUID: "e4a0b001-0004-0004-0004-000000000001", humUUID: "e4a0b001-0004-0004-0004-000000000002" },
         { name: "Ech_S",    tempUUID: "e5a0b001-0005-0005-0005-000000000001", humUUID: "e5a0b001-0005-0005-0005-000000000002" }
     ];
-
     const STORE_CHAR_UUID = "f6a0b001-0006-0006-0006-000000000006";
     const MODE_CHAR_UUID  = "f7a0b001-0007-0007-0007-000000000007";
     const CONSIGNE_CHAR_UUID = "f8a0b001-0008-0008-0008-000000000008";
@@ -155,9 +119,18 @@
     const TRAPPES_STATE_CHAR_UUID = "f0a0b001-0010-0010-0010-000000000010";
     const RES50W_STATE_CHAR_UUID  = "f1a0b001-0011-0011-0011-000000000011";
     const LUM_CHAR_UUID = "f2a0b001-0012-0012-0012-000000000012";
+    const LUX_DAY_SETPOINT_CHAR_UUID   = "f3a0b001-0013-0013-0013-000000000013";
+    const LUX_NIGHT_SETPOINT_CHAR_UUID = "f4a0b001-0014-0014-0014-000000000014";
+    const VBAT_CHAR_UUID    = "f5a0b001-0015-0015-0015-000000000015";
+    const IBAT_CHAR_UUID    = "f6a0b001-0016-0016-0016-000000000016";
+    const VPPV_CHAR_UUID    = "f7a0b001-0017-0017-0017-000000000017";
+    const PPPV_CHAR_UUID    = "f8a0b001-0018-0018-0018-000000000018";
+    const BAT_STATUS_CHAR_UUID = "f9a0b001-0019-0019-0019-000000000019";
+    const RES200W_FEEDBACK_CHAR_UUID = "faa0b001-0020-0020-0020-000000000020";
 
-    let device = null, server = null, service = null, commandChar = null;
-    let storeChar = null, modeChar = null, consigneChar = null, fanFeedbackChar = null, trappesStateChar = null, res50wStateChar = null, lumChar = null;
+    let device, server, service, commandChar;
+    let storeChar, modeChar, consigneChar, fanFeedbackChar, trappesStateChar, res50wStateChar;
+    let lumChar, luxDayChar, luxNightChar, vbatChar, ibatChar, vppvChar, pppvChar, batStatusChar, res200wChar;
 
     // DOM elements
     const connectBtn = document.getElementById('connectBtn');
@@ -172,6 +145,10 @@
     const consigneSlider = document.getElementById('consigneSlider');
     const consigneSliderValueSpan = document.getElementById('consigneSliderValue');
     const consigneFeedbackSpan = document.getElementById('consigneFeedback');
+    const luxDayInput = document.getElementById('luxDayInput');
+    const luxDayFeedbackSpan = document.getElementById('luxDayFeedback');
+    const luxNightInput = document.getElementById('luxNightInput');
+    const luxNightFeedbackSpan = document.getElementById('luxNightFeedback');
     const modeAutoBtn = document.getElementById('modeAutoBtn');
     const modeManualBtn = document.getElementById('modeManualBtn');
     const modeStatusSpan = document.getElementById('modeStatus');
@@ -182,13 +159,22 @@
     const res50wOffBtn = document.getElementById('res50wOffBtn');
     const res50wStatusSpan = document.getElementById('res50wStatus');
     const lumValueSpan = document.getElementById('lumValue');
+    const vbatValueSpan = document.getElementById('vbatValue');
+    const ibatValueSpan = document.getElementById('ibatValue');
+    const vppvValueSpan = document.getElementById('vppvValue');
+    const pppvValueSpan = document.getElementById('pppvValue');
+    const batStatusValueSpan = document.getElementById('batStatusValue');
+    const res200wSlider = document.getElementById('res200wSlider');
+    const res200wSliderValueSpan = document.getElementById('res200wSliderValue');
+    const res200wFeedbackSpan = document.getElementById('res200wFeedback');
     const clearLogBtn = document.getElementById('clearLogBtn');
     const logDiv = document.getElementById('log');
     const sensorBody = document.getElementById('sensorBody');
 
-    let consigneInteracting = false;  // flag pour éviter les conflits avec les notifications
+    let consigneInteracting = false, fanInteracting = false, storeInteracting = false, res200wInteracting = false;
+    let storeLastInteraction = 0;
+    const STORE_DEBOUNCE_MS = 3000;
 
-    // Contrôle des éléments selon le mode (N'impacte PAS le bouton Éteindre ni le curseur consigne)
     function setControlsEnabled(enable) {
         fanSlider.disabled = !enable;
         storeSlider.disabled = !enable;
@@ -196,7 +182,7 @@
         trappesCloseBtn.disabled = !enable;
         res50wOnBtn.disabled = !enable;
         res50wOffBtn.disabled = !enable;
-        // offBtn et consigneSlider ne sont pas touchés : ils restent toujours actifs
+        res200wSlider.disabled = !enable;
     }
 
     function onModeChanged(modeValue) {
@@ -204,21 +190,11 @@
         setControlsEnabled(!isAuto);
         modeAutoBtn.disabled = false;
         modeManualBtn.disabled = false;
-
-        if (modeValue === "AUTO") {
-            modeAutoBtn.style.background = "#10b981";
-            modeManualBtn.style.background = "#64748b";
-        } else if (modeValue === "MANUEL") {
-            modeAutoBtn.style.background = "#64748b";
-            modeManualBtn.style.background = "#4488ff";
-        } else {
-            modeAutoBtn.style.background = "#64748b";
-            modeManualBtn.style.background = "#64748b";
-        }
+        modeAutoBtn.style.background = isAuto ? "#10b981" : "#64748b";
+        modeManualBtn.style.background = isAuto ? "#64748b" : "#4488ff";
         modeStatusSpan.innerText = `Mode: ${modeValue}`;
     }
 
-    // Logging
     function addLog(msg, isError = false) {
         const entry = document.createElement('div');
         entry.style.color = isError ? '#f87171' : '#a5f3fc';
@@ -229,14 +205,11 @@
     }
     function clearLog() { logDiv.innerHTML = ''; }
 
-    // Tableau des capteurs
     function buildSensorTable() {
         sensorBody.innerHTML = '';
-        SENSORS.forEach((sensor, idx) => {
+        SENSORS.forEach((s, idx) => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td class="sensor-name">${sensor.name}</td>
-                <td class="value"><span id="temp-${idx}">--</span> °C</td>
-                <td class="value"><span id="hum-${idx}">--</span> %</td>`;
+            row.innerHTML = `<td class="sensor-name">${s.name}</td><td class="value"><span id="temp-${idx}">--</span> °C</td><td class="value"><span id="hum-${idx}">--</span> %</td>`;
             sensorBody.appendChild(row);
         });
     }
@@ -249,64 +222,142 @@
     function handleSensorNotification(event, idx, type) {
         const raw = new TextDecoder().decode(event.target.value);
         const match = raw.match(/(\d+\.?\d*)/);
-        if (!match) return;
-        const value = parseFloat(match[0]);
-        updateSensorUI(idx, type, value);
-        addLog(`📡 ${SENSORS[idx].name} ${type==='temp'?'temp.':'hum.'} : ${value.toFixed(1)} ${type==='temp'?'°C':'%'}`);
+        if (match) {
+            const val = parseFloat(match[0]);
+            updateSensorUI(idx, type, val);
+            addLog(`📡 ${SENSORS[idx].name} ${type==='temp'?'temp.':'hum.'} : ${val.toFixed(1)} ${type==='temp'?'°C':'%'}`);
+        }
     }
 
-    // Notifications
-    function handleStoreNotification(event) {
-        const raw = new TextDecoder().decode(event.target.value);
+    // --- Feedback handlers ---
+    function handleFanFeedback(e) {
+        const raw = new TextDecoder().decode(e.target.value);
         const match = raw.match(/(\d+)/);
-        if (match) { storeFeedbackSpan.innerText = match[0]; addLog(`📦 Store retour : ${match[0]} %`); }
+        if (match) {
+            const val = match[0];
+            fanFeedbackSpan.innerText = val;
+            if (!fanInteracting) { fanSlider.value = val; fanSliderValueSpan.innerText = val; }
+            addLog(`🌀 Ventilateur retour : ${val} %`);
+        }
     }
-    function handleModeNotification(event) {
-        const value = new TextDecoder().decode(event.target.value);
-        onModeChanged(value.trim());
-        addLog(`⚙️ Mode retour : ${value}`);
+
+    function handleStoreFeedback(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+)/);
+        if (match) {
+            const val = match[0];
+            storeFeedbackSpan.innerText = val;
+            const now = Date.now();
+            if (!storeInteracting && (now - storeLastInteraction) >= STORE_DEBOUNCE_MS) {
+                storeSlider.value = val;
+                storeSliderValueSpan.innerText = val;
+                addLog(`📦 Store mis à jour (feedback) : ${val} %`);
+            } else {
+                addLog(`📦 Store feedback reçu : ${val} % (attente fin interaction)`);
+            }
+        }
     }
-    function handleConsigneNotification(event) {
-        const raw = new TextDecoder().decode(event.target.value);
+
+    function handleConsigneFeedback(e) {
+        const raw = new TextDecoder().decode(e.target.value);
         const match = raw.match(/(\d+\.?\d*)/);
         if (match) {
-            const value = parseFloat(match[0]);
-            // Le feedback (valeur retour) s'affiche toujours
-            consigneFeedbackSpan.innerText = value.toFixed(1);
-            // Ne modifier la position du curseur que si l'utilisateur n'est pas en train de le déplacer
-            if (!consigneInteracting) {
-                consigneSlider.value = value;
-                consigneSliderValueSpan.innerText = value.toFixed(1);
-            }
-            addLog(`🎯 Consigne retour : ${value.toFixed(1)} °C`);
+            const val = parseFloat(match[0]).toFixed(1);
+            consigneFeedbackSpan.innerText = val;
+            if (!consigneInteracting) { consigneSlider.value = val; consigneSliderValueSpan.innerText = val; }
+            addLog(`🎯 Consigne retour : ${val} °C`);
         }
     }
-    function handleFanFeedbackNotification(event) {
-        const raw = new TextDecoder().decode(event.target.value);
-        const match = raw.match(/(\d+)/);
-        if (match) { fanFeedbackSpan.innerText = match[0]; addLog(`🌀 Ventilateur retour : ${match[0]} %`); }
-    }
-    function handleTrappesStateNotification(event) {
-        const raw = new TextDecoder().decode(event.target.value);
-        trappesStatusSpan.innerText = `État: ${raw}`;
-        addLog(`🚪 Trappes état : ${raw}`);
-    }
-    function handleRes50wStateNotification(event) {
-        const raw = new TextDecoder().decode(event.target.value);
-        res50wStatusSpan.innerText = `État: ${raw}`;
-        addLog(`⚡ RES50W état : ${raw}`);
-    }
-    function handleLumNotification(event) {
-        const raw = new TextDecoder().decode(event.target.value);
+
+    function handleRes200wFeedback(e) {
+        const raw = new TextDecoder().decode(e.target.value);
         const match = raw.match(/(\d+)/);
         if (match) {
-            lumValueSpan.innerText = match[0];
-            addLog(`💡 Luminosité : ${match[0]} lumen`);
+            const val = match[0];
+            res200wFeedbackSpan.innerText = val;
+            if (!res200wInteracting) { res200wSlider.value = val; res200wSliderValueSpan.innerText = val; }
+            addLog(`🌀 RES200W retour : ${val} %`);
         }
+    }
+
+    function handleModeNotification(e) {
+        const val = new TextDecoder().decode(e.target.value);
+        onModeChanged(val.trim());
+        addLog(`⚙️ Mode retour : ${val}`);
+    }
+
+    function handleTrappesStateNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const val = raw.trim();
+        const isOpen = (val === "1");
+        trappesStatusSpan.innerText = `État: ${isOpen ? "Ouvert" : "Fermé"}`;
+        trappesOpenBtn.style.background = isOpen ? "#10b981" : "#64748b";
+        trappesCloseBtn.style.background = !isOpen ? "#10b981" : "#64748b";
+        addLog(`🚪 Trappes état : ${isOpen ? "Ouvert" : "Fermé"} (${val})`);
+    }
+
+    function handleRes50wStateNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const val = raw.trim();
+        const isOn = (val === "1");
+        res50wStatusSpan.innerText = `État: ${isOn ? "ON" : "OFF"}`;
+        res50wOnBtn.style.background = isOn ? "#10b981" : "#64748b";
+        res50wOffBtn.style.background = !isOn ? "#10b981" : "#64748b";
+        addLog(`⚡ RES50W état : ${isOn ? "ON" : "OFF"} (${val})`);
+    }
+
+    function handleLumNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+)/);
+        if (match) { lumValueSpan.innerText = match[0]; addLog(`💡 Luminosité : ${match[0]} lumen`); }
+    }
+    function handleLuxDayNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+)/);
+        if (match) { luxDayFeedbackSpan.innerText = match[0]; addLog(`☀️ Seuil jour retour : ${match[0]} lx`); }
+    }
+    function handleLuxNightNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+)/);
+        if (match) { luxNightFeedbackSpan.innerText = match[0]; addLog(`🌙 Seuil nuit retour : ${match[0]} lx`); }
+    }
+    function handleVbatNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+\.?\d*)/);
+        if (match) { vbatValueSpan.innerText = match[0]; addLog(`🔋 Vbat : ${match[0]} V`); }
+    }
+    function handleIbatNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+\.?\d*)/);
+        if (match) { ibatValueSpan.innerText = match[0]; addLog(`🔌 Ibat : ${match[0]} A`); }
+    }
+    function handleVppvNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+\.?\d*)/);
+        if (match) { vppvValueSpan.innerText = match[0]; addLog(`☀️ Vppv : ${match[0]} V`); }
+    }
+    function handlePppvNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/(\d+)/);
+        if (match) { pppvValueSpan.innerText = match[0]; addLog(`⚡ Pppv : ${match[0]} W`); }
+    }
+    function handleBatStatusNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const cs = parseInt(raw, 10);
+        let text = "Inconnu";
+        switch(cs) {
+            case 0: text = "Hors tension"; break;
+            case 2: text = "Défaut"; break;
+            case 3: text = "Charge rapide"; break;
+            case 4: text = "Charge lente"; break;
+            case 5: text = "Maintien"; break;
+        }
+        batStatusValueSpan.innerText = text;
+        addLog(`📊 État batterie : ${text}`);
     }
 
     async function sendCommand(cmd) {
-        if (!commandChar || !device || !device.gatt.connected) {
+        if (!commandChar || !device?.gatt?.connected) {
             addLog("❌ Non connecté → commande ignorée", true);
             return false;
         }
@@ -321,20 +372,15 @@
     }
 
     async function connect() {
+        if (!navigator.bluetooth) { alert("Web Bluetooth non supporté. Utilisez Bluefy."); return; }
         addLog("🔍 Recherche des appareils BLE...");
         try {
-            device = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true,
-                optionalServices: [SERVICE_UUID]
-            });
+            device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [SERVICE_UUID] });
             addLog(`✅ Appareil sélectionné : ${device.name || device.id}`);
-
             server = await device.gatt.connect();
             addLog("✅ Serveur GATT connecté");
-
             service = await server.getPrimaryService(SERVICE_UUID);
             addLog("✅ Service trouvé");
-
             commandChar = await service.getCharacteristic(COMMAND_CHAR_UUID);
             addLog("✅ Caractéristique commande OK");
 
@@ -345,54 +391,60 @@
                     c.addEventListener('characteristicvaluechanged', handler);
                     addLog(`✅ Abonné : ${uuid.slice(-8)}`);
                     return c;
-                } catch (e) { addLog(`⚠️ Non trouvé : ${uuid.slice(-8)}`, true); return null; }
+                } catch(e) { addLog(`⚠️ Non trouvé : ${uuid.slice(-8)}`, true); return null; }
             };
 
-            storeChar = await subscribe(STORE_CHAR_UUID, handleStoreNotification);
+            storeChar = await subscribe(STORE_CHAR_UUID, handleStoreFeedback);
             modeChar = await subscribe(MODE_CHAR_UUID, handleModeNotification);
-            consigneChar = await subscribe(CONSIGNE_CHAR_UUID, handleConsigneNotification);
-            fanFeedbackChar = await subscribe(FAN_FEEDBACK_CHAR_UUID, handleFanFeedbackNotification);
+            consigneChar = await subscribe(CONSIGNE_CHAR_UUID, handleConsigneFeedback);
+            fanFeedbackChar = await subscribe(FAN_FEEDBACK_CHAR_UUID, handleFanFeedback);
             trappesStateChar = await subscribe(TRAPPES_STATE_CHAR_UUID, handleTrappesStateNotification);
             res50wStateChar = await subscribe(RES50W_STATE_CHAR_UUID, handleRes50wStateNotification);
             lumChar = await subscribe(LUM_CHAR_UUID, handleLumNotification);
+            luxDayChar = await subscribe(LUX_DAY_SETPOINT_CHAR_UUID, handleLuxDayNotification);
+            luxNightChar = await subscribe(LUX_NIGHT_SETPOINT_CHAR_UUID, handleLuxNightNotification);
+            vbatChar = await subscribe(VBAT_CHAR_UUID, handleVbatNotification);
+            if (vbatChar) console.log("Vbat char abonné");
+            ibatChar = await subscribe(IBAT_CHAR_UUID, handleIbatNotification);
+            vppvChar = await subscribe(VPPV_CHAR_UUID, handleVppvNotification);
+            pppvChar = await subscribe(PPPV_CHAR_UUID, handlePppvNotification);
+            batStatusChar = await subscribe(BAT_STATUS_CHAR_UUID, handleBatStatusNotification);
+            res200wChar = await subscribe(RES200W_FEEDBACK_CHAR_UUID, handleRes200wFeedback);
 
             for (let i = 0; i < SENSORS.length; i++) {
                 const s = SENSORS[i];
                 try {
-                    const tempChar = await service.getCharacteristic(s.tempUUID);
-                    const humChar = await service.getCharacteristic(s.humUUID);
-                    await tempChar.startNotifications();
-                    tempChar.addEventListener('characteristicvaluechanged', (event) => handleSensorNotification(event, i, 'temp'));
-                    await humChar.startNotifications();
-                    humChar.addEventListener('characteristicvaluechanged', (event) => handleSensorNotification(event, i, 'hum'));
+                    const tc = await service.getCharacteristic(s.tempUUID);
+                    const hc = await service.getCharacteristic(s.humUUID);
+                    await tc.startNotifications();
+                    tc.addEventListener('characteristicvaluechanged', (ev) => handleSensorNotification(ev, i, 'temp'));
+                    await hc.startNotifications();
+                    hc.addEventListener('characteristicvaluechanged', (ev) => handleSensorNotification(ev, i, 'hum'));
                     addLog(`✅ Capteur ${s.name} abonné`);
                 } catch(e) { addLog(`❌ Capteur ${s.name} non trouvé : ${e.message}`, true); }
             }
 
-            if (consigneChar) {
-                const val = await consigneChar.readValue();
-                handleConsigneNotification({ target: { value: val } });
-            }
+            if (consigneChar) { let v = await consigneChar.readValue(); handleConsigneFeedback({ target: { value: v } }); }
+            if (luxDayChar) { let v = await luxDayChar.readValue(); handleLuxDayNotification({ target: { value: v } }); }
+            if (luxNightChar) { let v = await luxNightChar.readValue(); handleLuxNightNotification({ target: { value: v } }); }
 
-            // Toujours activer le bouton Éteindre et le curseur consigne (ils ne dépendent pas du mode)
             offBtn.disabled = false;
             consigneSlider.disabled = false;
-
-            // Les autres contrôles sont désactivés en attendant le mode (pour éviter les actions intempestives)
+            luxDayInput.disabled = false;
+            luxNightInput.disabled = false;
             setControlsEnabled(false);
             modeAutoBtn.disabled = false;
             modeManualBtn.disabled = false;
             modeStatusSpan.innerText = "Mode: --";
             modeAutoBtn.style.background = "#64748b";
             modeManualBtn.style.background = "#64748b";
-
             connectBtn.disabled = true;
             connStatusSpan.innerText = "Connecté";
             connStatusSpan.style.backgroundColor = "#10b981";
-            addLog("🎉 Interface prête, attente des données...");
-        } catch (error) {
-            addLog(`❌ ERREUR CONNEXION : ${error.message}`, true);
-            console.error(error);
+            addLog("🎉 Interface prête");
+        } catch (err) {
+            addLog(`❌ ERREUR CONNEXION : ${err.message}`, true);
+            console.error(err);
             connectBtn.disabled = false;
             connStatusSpan.innerText = "Erreur";
         }
@@ -409,24 +461,31 @@
     res50wOffBtn.onclick = () => sendCommand("RES50W_OFF");
     clearLogBtn.onclick = clearLog;
 
-    fanSlider.oninput = (e) => { fanSliderValueSpan.innerText = e.target.value; };
-    fanSlider.onchange = (e) => { sendCommand(`FAN=${e.target.value}`); };
-    storeSlider.oninput = (e) => { storeSliderValueSpan.innerText = e.target.value; };
-    storeSlider.onchange = (e) => { sendCommand(`STORE=${e.target.value}`); };
-    consigneSlider.oninput = (e) => {
-        const val = parseFloat(e.target.value);
-        consigneSliderValueSpan.innerText = val.toFixed(1);
-    };
-    consigneSlider.onchange = (e) => {
-        const val = parseFloat(e.target.value);
-        sendCommand(`CONSIGNE=${val.toFixed(1)}`);
-    };
+    fanSlider.oninput = e => { fanSliderValueSpan.innerText = e.target.value; };
+    fanSlider.onchange = e => sendCommand(`FAN=${e.target.value}`);
+    storeSlider.oninput = e => { storeSliderValueSpan.innerText = e.target.value; storeInteracting = true; storeLastInteraction = Date.now(); };
+    storeSlider.onchange = e => sendCommand(`STORE=${e.target.value}`);
+    storeSlider.addEventListener('mouseup', () => { setTimeout(() => { if (Date.now() - storeLastInteraction >= STORE_DEBOUNCE_MS) storeInteracting = false; }, 500); });
+    storeSlider.addEventListener('touchend', () => { setTimeout(() => { if (Date.now() - storeLastInteraction >= STORE_DEBOUNCE_MS) storeInteracting = false; }, 500); });
+    consigneSlider.oninput = e => { consigneSliderValueSpan.innerText = parseFloat(e.target.value).toFixed(1); };
+    consigneSlider.onchange = e => sendCommand(`CONSIGNE=${parseFloat(e.target.value).toFixed(1)}`);
+    res200wSlider.oninput = e => { res200wSliderValueSpan.innerText = e.target.value; };
+    res200wSlider.onchange = e => sendCommand(`RES200W=${e.target.value}`);
+    luxDayInput.onchange = () => { let v = parseInt(luxDayInput.value); if (!isNaN(v)) sendCommand(`LUX_DAY=${v}`); };
+    luxNightInput.onchange = () => { let v = parseInt(luxNightInput.value); if (!isNaN(v)) sendCommand(`LUX_NIGHT=${v}`); };
 
-    // Gestion des interactions pour éviter les conflits avec les notifications
-    consigneSlider.addEventListener('mousedown', () => { consigneInteracting = true; });
-    consigneSlider.addEventListener('mouseup', () => { consigneInteracting = false; });
-    consigneSlider.addEventListener('touchstart', () => { consigneInteracting = true; });
-    consigneSlider.addEventListener('touchend', () => { consigneInteracting = false; });
+    consigneSlider.addEventListener('mousedown', () => consigneInteracting = true);
+    consigneSlider.addEventListener('mouseup', () => consigneInteracting = false);
+    consigneSlider.addEventListener('touchstart', () => consigneInteracting = true);
+    consigneSlider.addEventListener('touchend', () => consigneInteracting = false);
+    fanSlider.addEventListener('mousedown', () => fanInteracting = true);
+    fanSlider.addEventListener('mouseup', () => fanInteracting = false);
+    fanSlider.addEventListener('touchstart', () => fanInteracting = true);
+    fanSlider.addEventListener('touchend', () => fanInteracting = false);
+    res200wSlider.addEventListener('mousedown', () => res200wInteracting = true);
+    res200wSlider.addEventListener('mouseup', () => res200wInteracting = false);
+    res200wSlider.addEventListener('touchstart', () => res200wInteracting = true);
+    res200wSlider.addEventListener('touchend', () => res200wInteracting = false);
 
     buildSensorTable();
     addLog("📱 Interface prête – Cliquez sur 'Connecter'");
