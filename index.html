@@ -281,15 +281,28 @@
     }
 
     function handleModeNotification(e) {
-        const val = new TextDecoder().decode(e.target.value);
-        onModeChanged(val.trim());
-        addLog(`⚙️ Mode retour : ${val}`);
+        const raw = new TextDecoder().decode(e.target.value);
+        // Extrait "AUTO" ou "MANUEL" (insensible à la casse, accepte les caractères autour)
+        const match = raw.match(/(AUTO|MANUEL|MANUAL)/i);
+        if (!match) {
+            addLog(`⚠️ Mode non reconnu : ${raw}`, true);
+            return;
+        }
+        const mode = match[0].toUpperCase();
+        onModeChanged(mode);
+        addLog(`⚙️ Mode retour : ${mode}`);
     }
 
     function handleTrappesStateNotification(e) {
         const raw = new TextDecoder().decode(e.target.value);
-        const val = raw.trim();
-        const isOpen = (val === "1");
+        // Extrait le premier caractère '0' ou '1' (ignore tout le reste)
+        const match = raw.match(/[01]/);
+        if (!match) {
+            addLog(`⚠️ Trappes valeur non reconnue : ${raw}`, true);
+            return;
+        }
+        const val = match[0];   // '0' ou '1'
+        const isOpen = (val === "0");   // 0 = ouvert
         trappesStatusSpan.innerText = `État: ${isOpen ? "Ouvert" : "Fermé"}`;
         trappesOpenBtn.style.background = isOpen ? "#10b981" : "#64748b";
         trappesCloseBtn.style.background = !isOpen ? "#10b981" : "#64748b";
@@ -298,7 +311,9 @@
 
     function handleRes50wStateNotification(e) {
         const raw = new TextDecoder().decode(e.target.value);
-        const val = raw.trim();
+        const match = raw.match(/[01]/);
+        if (!match) return;
+        const val = match[0];
         const isOn = (val === "1");
         res50wStatusSpan.innerText = `État: ${isOn ? "ON" : "OFF"}`;
         res50wOnBtn.style.background = isOn ? "#10b981" : "#64748b";
