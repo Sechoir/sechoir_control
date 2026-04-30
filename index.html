@@ -200,7 +200,7 @@
         entry.style.color = isError ? '#f87171' : '#a5f3fc';
         entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
         logDiv.appendChild(entry);
-        entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        //entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         console.log(msg);
     }
     function clearLog() { logDiv.innerHTML = ''; }
