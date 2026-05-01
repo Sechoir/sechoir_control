@@ -198,16 +198,16 @@
         modeStatusSpan.innerText = `Mode: ${modeValue}`;
     }
 
-    /*function addLog(msg, isError = false) {
+    function addLog(msg, isError = false) {
         const entry = document.createElement('div');
         entry.style.color = isError ? '#f87171' : '#a5f3fc';
         entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
         logDiv.appendChild(entry);
         entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         console.log(msg);
-    }*/
+    }
 
-    function addLog(msg, isError = false) {
+    /*function addLog(msg, isError = false) {
     const entry = document.createElement('div');
     entry.style.color = isError ? '#f87171' : '#a5f3fc';
     entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
@@ -218,7 +218,7 @@
         entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     console.log(msg);
-}
+    }*/
 
     function clearLog() { logDiv.innerHTML = ''; }
 
