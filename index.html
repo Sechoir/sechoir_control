@@ -40,6 +40,9 @@
         .lum-line { background: #f8fafc; border-radius: 20px; padding: 8px 12px; margin-top: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; }
         .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 12px; background: #f8fafc; border-radius: 16px; padding: 10px; }
         .sensor-grid div { font-size: 0.75rem; }
+        input[type="range"] {
+            touch-action: manipulation;   /* bloque le double-tap zoom et réduit le scroll accidentel */
+        }
     </style>
 </head>
 <body>
@@ -195,14 +198,28 @@
         modeStatusSpan.innerText = `Mode: ${modeValue}`;
     }
 
-    function addLog(msg, isError = false) {
+    /*function addLog(msg, isError = false) {
         const entry = document.createElement('div');
         entry.style.color = isError ? '#f87171' : '#a5f3fc';
         entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
         logDiv.appendChild(entry);
-        //entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         console.log(msg);
+    }*/
+
+    function addLog(msg, isError = false) {
+    const entry = document.createElement('div');
+    entry.style.color = isError ? '#f87171' : '#a5f3fc';
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    
+    const wasAtBottom = logDiv.scrollHeight - logDiv.clientHeight <= logDiv.scrollTop + 5;
+    logDiv.appendChild(entry);
+    if (wasAtBottom) {
+        entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+    console.log(msg);
+}
+
     function clearLog() { logDiv.innerHTML = ''; }
 
     function buildSensorTable() {
