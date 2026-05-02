@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Séchoir – Contrôle BLE</title>
+    <title>Séchoir – Contrôle BLE (Hybride)</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
         body { background: #f0f4f8; margin: 0; padding: 10px; }
@@ -41,7 +41,7 @@
         .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 12px; background: #f8fafc; border-radius: 16px; padding: 10px; }
         .sensor-grid div { font-size: 0.75rem; }
         input[type="range"] {
-            touch-action: manipulation;   /* bloque le double-tap zoom et réduit le scroll accidentel */
+            touch-action: manipulation;
         }
     </style>
 </head>
@@ -99,6 +99,11 @@
         <div class="control-row"><label>🌀 Ventil.</label><input type="range" id="fanSlider" min="0" max="100" step="1" disabled><span id="fanSliderValue" class="slider-value">0</span><span class="feedback-label">↺</span><span id="fanFeedback" class="feedback-value">--</span><span>%</span></div>
         <div class="control-row"><label>📦 Store</label><input type="range" id="storeSlider" min="0" max="100" step="1" disabled><span id="storeSliderValue" class="slider-value">0</span><span class="feedback-label">↺</span><span id="storeFeedback" class="feedback-value">--</span><span>%</span></div>
         <div class="control-row"><label>🎯 Consigne</label><input type="range" id="consigneSlider" min="0" max="60" step="0.1" disabled><span id="consigneSliderValue" class="slider-value">22.5</span><span class="feedback-label">↺</span><span id="consigneFeedback" class="feedback-value">--</span><span>°C</span></div>
+        <div class="control-row">
+            <label>🔋 Vbat</label>
+            <button id="readVbatBtn">Lire Vbat</button>
+            <span id="vbatManual" style="margin-left: 10px;">-- V</span>
+        </div>
     </div>
 
     <div class="card"><div class="flex-between"><h2>📜 Événements</h2><button id="clearLogBtn" style="background:#94a3b8;">Effacer</button></div><div id="log" class="log-box"></div></div>
@@ -174,6 +179,34 @@
     const logDiv = document.getElementById('log');
     const sensorBody = document.getElementById('sensorBody');
 
+    // Bouton de lecture Vbat (manuel)
+    const readVbatBtn = document.getElementById('readVbatBtn');
+    const vbatManualSpan = document.getElementById('vbatManual');
+    if (readVbatBtn) {
+        readVbatBtn.onclick = async () => {
+            if (!vbatChar) {
+                addLog("❌ Caractéristique Vbat non disponible", true);
+                return;
+            }
+            try {
+                const value = await vbatChar.readValue();
+                const raw = new TextDecoder().decode(value);
+                addLog(`🔍 Vbat (lecture directe) : ${raw}`);
+                const match = raw.match(/\d+(?:\.\d+)?/);
+                if (match) {
+                    const num = parseFloat(match[0]);
+                    vbatManualSpan.innerText = num.toFixed(2) + " V";
+                    vbatValueSpan.innerText = num.toFixed(2);
+                    addLog(`🔋 Vbat : ${num.toFixed(2)} V`);
+                } else {
+                    addLog(`⚠️ Vbat non reconnu : ${raw}`, true);
+                }
+            } catch (err) {
+                addLog(`❌ Erreur lecture Vbat : ${err.message}`, true);
+            }
+        };
+    }
+
     let consigneInteracting = false, fanInteracting = false, storeInteracting = false, res200wInteracting = false;
     let storeLastInteraction = 0;
     const STORE_DEBOUNCE_MS = 3000;
@@ -207,19 +240,6 @@
         console.log(msg);
     }
 
-    /*function addLog(msg, isError = false) {
-    const entry = document.createElement('div');
-    entry.style.color = isError ? '#f87171' : '#a5f3fc';
-    entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-    
-    const wasAtBottom = logDiv.scrollHeight - logDiv.clientHeight <= logDiv.scrollTop + 5;
-    logDiv.appendChild(entry);
-    if (wasAtBottom) {
-        entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    console.log(msg);
-    }*/
-
     function clearLog() { logDiv.innerHTML = ''; }
 
     function buildSensorTable() {
@@ -246,7 +266,7 @@
         }
     }
 
-    // --- Feedback handlers ---
+    // --- Handlers pour les notifications des caractéristiques réactives ---
     function handleFanFeedback(e) {
         const raw = new TextDecoder().decode(e.target.value);
         const match = raw.match(/(\d+)/);
@@ -299,7 +319,6 @@
 
     function handleModeNotification(e) {
         const raw = new TextDecoder().decode(e.target.value);
-        // Extrait "AUTO" ou "MANUEL" (insensible à la casse, accepte les caractères autour)
         const match = raw.match(/(AUTO|MANUEL|MANUAL)/i);
         if (!match) {
             addLog(`⚠️ Mode non reconnu : ${raw}`, true);
@@ -312,14 +331,13 @@
 
     function handleTrappesStateNotification(e) {
         const raw = new TextDecoder().decode(e.target.value);
-        // Extrait le premier caractère '0' ou '1' (ignore tout le reste)
         const match = raw.match(/[01]/);
         if (!match) {
             addLog(`⚠️ Trappes valeur non reconnue : ${raw}`, true);
             return;
         }
-        const val = match[0];   // '0' ou '1'
-        const isOpen = (val === "0");   // 0 = ouvert
+        const val = match[0];
+        const isOpen = (val === "0");
         trappesStatusSpan.innerText = `État: ${isOpen ? "Ouvert" : "Fermé"}`;
         trappesOpenBtn.style.background = isOpen ? "#10b981" : "#64748b";
         trappesCloseBtn.style.background = !isOpen ? "#10b981" : "#64748b";
@@ -343,50 +361,116 @@
         const match = raw.match(/(\d+)/);
         if (match) { lumValueSpan.innerText = match[0]; addLog(`💡 Luminosité : ${match[0]} lumen`); }
     }
-    function handleLuxDayNotification(e) {
-        const raw = new TextDecoder().decode(e.target.value);
-        const match = raw.match(/(\d+)/);
-        if (match) { luxDayFeedbackSpan.innerText = match[0]; addLog(`☀️ Seuil jour retour : ${match[0]} lx`); }
+
+    // --- Lectures périodiques pour les valeurs électriques et seuils ---
+    async function readElectricsAndThresholds() {
+    if (!device || !device.gatt.connected) return;
+
+    // Vbat
+    if (vbatChar) {
+        try {
+            const val = await vbatChar.readValue();
+            const raw = new TextDecoder().decode(val);
+            const match = raw.match(/\d+(?:\.\d+)?/);
+            if (match) {
+                const num = parseFloat(match[0]);
+                vbatValueSpan.innerText = num.toFixed(2);
+                addLog(`🔋 Vbat (polling) : ${num.toFixed(2)} V`);
+            }
+        } catch(e) { /* ignorer */ }
     }
-    function handleLuxNightNotification(e) {
-        const raw = new TextDecoder().decode(e.target.value);
-        const match = raw.match(/(\d+)/);
-        if (match) { luxNightFeedbackSpan.innerText = match[0]; addLog(`🌙 Seuil nuit retour : ${match[0]} lx`); }
+
+    // Ibat
+    if (ibatChar) {
+        try {
+            const val = await ibatChar.readValue();
+            const raw = new TextDecoder().decode(val);
+            const match = raw.match(/\d+(?:\.\d+)?/);
+            if (match) {
+                const num = parseFloat(match[0]);
+                ibatValueSpan.innerText = num.toFixed(2);
+                addLog(`🔌 Ibat (polling) : ${num.toFixed(2)} A`);
+            }
+        } catch(e) { /* ignorer */ }
     }
-    function handleVbatNotification(e) {
-        const raw = new TextDecoder().decode(e.target.value);
-        const match = raw.match(/(\d+\.?\d*)/);
-        if (match) { vbatValueSpan.innerText = match[0]; addLog(`🔋 Vbat : ${match[0]} V`); }
+
+    // Vppv (tension panneau)
+    if (vppvChar) {
+        try {
+            const val = await vppvChar.readValue();
+            const raw = new TextDecoder().decode(val);
+            const match = raw.match(/\d+(?:\.\d+)?/);
+            if (match) {
+                const num = parseFloat(match[0]);
+                vppvValueSpan.innerText = num.toFixed(1);
+                addLog(`☀️ Vppv (polling) : ${num.toFixed(1)} V`);
+            }
+        } catch(e) { /* ignorer */ }
     }
-    function handleIbatNotification(e) {
-        const raw = new TextDecoder().decode(e.target.value);
-        const match = raw.match(/(\d+\.?\d*)/);
-        if (match) { ibatValueSpan.innerText = match[0]; addLog(`🔌 Ibat : ${match[0]} A`); }
+
+    // Pppv (puissance panneau)
+    if (pppvChar) {
+        try {
+            const val = await pppvChar.readValue();
+            const raw = new TextDecoder().decode(val);
+            const match = raw.match(/\d+/);
+            if (match) {
+                const num = parseInt(match[0], 10);
+                pppvValueSpan.innerText = num;
+                addLog(`⚡ Pppv (polling) : ${num} W`);
+            }
+        } catch(e) { /* ignorer */ }
     }
-    function handleVppvNotification(e) {
-        const raw = new TextDecoder().decode(e.target.value);
-        const match = raw.match(/(\d+\.?\d*)/);
-        if (match) { vppvValueSpan.innerText = match[0]; addLog(`☀️ Vppv : ${match[0]} V`); }
+
+    // État batterie
+    if (batStatusChar) {
+        try {
+            const val = await batStatusChar.readValue();
+            const raw = new TextDecoder().decode(val);
+            const cs = parseInt(raw, 10);
+            let text = "Inconnu";
+            switch(cs) {
+                case 0: text = "Hors tension"; break;
+                case 2: text = "Défaut"; break;
+                case 3: text = "Charge rapide"; break;
+                case 4: text = "Charge lente"; break;
+                case 5: text = "Maintien"; break;
+            }
+            batStatusValueSpan.innerText = text;
+            addLog(`📊 État batterie (polling) : ${text}`);
+        } catch(e) { /* ignorer */ }
     }
-    function handlePppvNotification(e) {
-        const raw = new TextDecoder().decode(e.target.value);
-        const match = raw.match(/(\d+)/);
-        if (match) { pppvValueSpan.innerText = match[0]; addLog(`⚡ Pppv : ${match[0]} W`); }
+
+    // Seuil jour
+    if (luxDayChar) {
+        try {
+            const val = await luxDayChar.readValue();
+            const raw = new TextDecoder().decode(val);
+            const match = raw.match(/\d+/);
+            if (match) {
+                const num = match[0];
+                luxDayFeedbackSpan.innerText = num;
+                addLog(`☀️ Seuil jour (polling) : ${num} lx`);
+            }
+        } catch(e) { /* ignorer */ }
     }
-    function handleBatStatusNotification(e) {
-        const raw = new TextDecoder().decode(e.target.value);
-        const cs = parseInt(raw, 10);
-        let text = "Inconnu";
-        switch(cs) {
-            case 0: text = "Hors tension"; break;
-            case 2: text = "Défaut"; break;
-            case 3: text = "Charge rapide"; break;
-            case 4: text = "Charge lente"; break;
-            case 5: text = "Maintien"; break;
-        }
-        batStatusValueSpan.innerText = text;
-        addLog(`📊 État batterie : ${text}`);
+
+    // Seuil nuit
+    if (luxNightChar) {
+        try {
+            const val = await luxNightChar.readValue();
+            const raw = new TextDecoder().decode(val);
+            const match = raw.match(/\d+/);
+            if (match) {
+                const num = match[0];
+                luxNightFeedbackSpan.innerText = num;
+                addLog(`🌙 Seuil nuit (polling) : ${num} lx`);
+            }
+        } catch(e) { /* ignorer */ }
     }
+}
+
+    let slowPollInterval = null;
 
     async function sendCommand(cmd) {
         if (!commandChar || !device?.gatt?.connected) {
@@ -396,6 +480,8 @@
         try {
             await commandChar.writeValue(new TextEncoder().encode(cmd));
             addLog(`📤 Commande : ${cmd}`);
+            // Après la commande, forcer une lecture des valeurs électriques et seuils (avec un léger délai)
+            setTimeout(() => readElectricsAndThresholds(), 200);
             return true;
         } catch (err) {
             addLog(`❌ Erreur envoi "${cmd}" : ${err.message}`, true);
@@ -416,6 +502,7 @@
             commandChar = await service.getCharacteristic(COMMAND_CHAR_UUID);
             addLog("✅ Caractéristique commande OK");
 
+            // Abonnement aux notifications pour les caractéristiques réactives
             const subscribe = async (uuid, handler) => {
                 try {
                     const c = await service.getCharacteristic(uuid);
@@ -433,16 +520,9 @@
             trappesStateChar = await subscribe(TRAPPES_STATE_CHAR_UUID, handleTrappesStateNotification);
             res50wStateChar = await subscribe(RES50W_STATE_CHAR_UUID, handleRes50wStateNotification);
             lumChar = await subscribe(LUM_CHAR_UUID, handleLumNotification);
-            luxDayChar = await subscribe(LUX_DAY_SETPOINT_CHAR_UUID, handleLuxDayNotification);
-            luxNightChar = await subscribe(LUX_NIGHT_SETPOINT_CHAR_UUID, handleLuxNightNotification);
-            vbatChar = await subscribe(VBAT_CHAR_UUID, handleVbatNotification);
-            if (vbatChar) console.log("Vbat char abonné");
-            ibatChar = await subscribe(IBAT_CHAR_UUID, handleIbatNotification);
-            vppvChar = await subscribe(VPPV_CHAR_UUID, handleVppvNotification);
-            pppvChar = await subscribe(PPPV_CHAR_UUID, handlePppvNotification);
-            batStatusChar = await subscribe(BAT_STATUS_CHAR_UUID, handleBatStatusNotification);
             res200wChar = await subscribe(RES200W_FEEDBACK_CHAR_UUID, handleRes200wFeedback);
 
+            // Pour les capteurs de température/humidité
             for (let i = 0; i < SENSORS.length; i++) {
                 const s = SENSORS[i];
                 try {
@@ -456,10 +536,23 @@
                 } catch(e) { addLog(`❌ Capteur ${s.name} non trouvé : ${e.message}`, true); }
             }
 
-            if (consigneChar) { let v = await consigneChar.readValue(); handleConsigneFeedback({ target: { value: v } }); }
-            if (luxDayChar) { let v = await luxDayChar.readValue(); handleLuxDayNotification({ target: { value: v } }); }
-            if (luxNightChar) { let v = await luxNightChar.readValue(); handleLuxNightNotification({ target: { value: v } }); }
+            // Récupération des caractéristiques pour lecture périodique (pas de notifications)
+            try { vbatChar = await service.getCharacteristic(VBAT_CHAR_UUID); } catch(e) { addLog(`⚠️ Vbat non trouvé`, true); }
+            try { ibatChar = await service.getCharacteristic(IBAT_CHAR_UUID); } catch(e) { addLog(`⚠️ Ibat non trouvé`, true); }
+            try { vppvChar = await service.getCharacteristic(VPPV_CHAR_UUID); } catch(e) { addLog(`⚠️ Vppv non trouvé`, true); }
+            try { pppvChar = await service.getCharacteristic(PPPV_CHAR_UUID); } catch(e) { addLog(`⚠️ Pppv non trouvé`, true); }
+            try { batStatusChar = await service.getCharacteristic(BAT_STATUS_CHAR_UUID); } catch(e) { addLog(`⚠️ BatStatus non trouvé`, true); }
+            try { luxDayChar = await service.getCharacteristic(LUX_DAY_SETPOINT_CHAR_UUID); } catch(e) { addLog(`⚠️ LuxDay non trouvé`, true); }
+            try { luxNightChar = await service.getCharacteristic(LUX_NIGHT_SETPOINT_CHAR_UUID); } catch(e) { addLog(`⚠️ LuxNight non trouvé`, true); }
 
+            // Lecture initiale des valeurs électriques et seuils
+            await readElectricsAndThresholds();
+
+            // Lancer le polling lent (5 secondes)
+            if (slowPollInterval) clearInterval(slowPollInterval);
+            slowPollInterval = setInterval(readElectricsAndThresholds, 5000);
+
+            // Activer les contrôles UI
             offBtn.disabled = false;
             consigneSlider.disabled = false;
             luxDayInput.disabled = false;
@@ -482,7 +575,7 @@
         }
     }
 
-    // Événements
+    // Événements UI
     connectBtn.onclick = connect;
     offBtn.onclick = () => sendCommand("OFF");
     modeAutoBtn.onclick = () => sendCommand("MODE_AUTO");
