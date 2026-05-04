@@ -81,30 +81,39 @@
         </div><span id="modeStatus" class="feedback-value">Mode: --</span></div>
 
         <!-- Seuils et Mode J/N -->
-<div style="margin: 12px 0;">
-    <!-- Ligne des libellés -->
-    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 0 8px;">
-        <span style="flex: 1; text-align: center; font-weight: 600;">☀️ Seuil jour</span>
-        <span style="flex: 1; text-align: center; font-weight: 600;">🌙 Seuil nuit</span>
-        <span style="flex: 1; text-align: center; font-weight: 600;">⚙️ Mode J/N</span>
+<div style="display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap;">
+    <!-- Bloc Seuil jour -->
+    <div style="flex: 1; min-width: 100px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
+            <span style="font-weight: 600;">☀️</span>
+            <input type="number" id="luxDayInput" step="50" style="width: 70px; text-align: center;" disabled>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span style="font-size: 0.7rem;">↺</span>
+            <span id="luxDayFeedback" class="feedback-value">--</span>
+            <span style="font-size: 0.7rem;">lx</span>
+        </div>
     </div>
-    <!-- Ligne des valeurs et retours -->
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <!-- Seuil jour -->
-        <div style="flex: 1; display: flex; align-items: center; gap: 4px;">
-            <input type="number" id="luxDayInput" step="50" style="width: 80px;" disabled>
-            <span class="feedback-label">↺</span>
-            <span id="luxDayFeedback" class="feedback-value">--</span><span>lx</span>
+    <!-- Bloc Seuil nuit -->
+    <div style="flex: 1; min-width: 100px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
+            <span style="font-weight: 600;">🌙</span>
+            <input type="number" id="luxNightInput" step="50" style="width: 70px; text-align: center;" disabled>
         </div>
-        <!-- Seuil nuit -->
-        <div style="flex: 1; display: flex; align-items: center; gap: 4px;">
-            <input type="number" id="luxNightInput" step="50" style="width: 80px;" disabled>
-            <span class="feedback-label">↺</span>
-            <span id="luxNightFeedback" class="feedback-value">--</span><span>lx</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span style="font-size: 0.7rem;">↺</span>
+            <span id="luxNightFeedback" class="feedback-value">--</span>
+            <span style="font-size: 0.7rem;">lx</span>
         </div>
-        <!-- Mode J/N : retour uniquement -->
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span class="feedback-label">↺</span>
+    </div>
+    <!-- Bloc Mode J/N -->
+    <div style="flex: 1; min-width: 100px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
+            <span style="font-weight: 600;">⚙️ J/N</span>
+            <span style="width: 70px; text-align: center; font-size: 0.7rem; color: #64748b;">(lecture)</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span style="font-size: 0.7rem;">↺</span>
             <span id="modeJnFeedback" class="feedback-value">--</span>
         </div>
     </div>
