@@ -80,10 +80,35 @@
             <button id="modeManualBtn" class="mode-btn" disabled>Manuel</button>
         </div><span id="modeStatus" class="feedback-value">Mode: --</span></div>
 
-        <div class="control-row" style="display: flex; gap: 12px; align-items: center;">
-            <div><label style="width:auto;">☀️ Seuil jour</label><input type="number" id="luxDayInput" step="50" style="width:90px;" disabled><span class="feedback-label">↺</span><span id="luxDayFeedback" class="feedback-value">--</span><span>lx</span></div>
-            <div><label style="width:auto;">🌙 Seuil nuit</label><input type="number" id="luxNightInput" step="50" style="width:90px;" disabled><span class="feedback-label">↺</span><span id="luxNightFeedback" class="feedback-value">--</span><span>lx</span></div>
+        <!-- Seuils et Mode J/N -->
+<div style="margin: 12px 0;">
+    <!-- Ligne des libellés -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 0 8px;">
+        <span style="flex: 1; text-align: center; font-weight: 600;">☀️ Seuil jour</span>
+        <span style="flex: 1; text-align: center; font-weight: 600;">🌙 Seuil nuit</span>
+        <span style="flex: 1; text-align: center; font-weight: 600;">⚙️ Mode J/N</span>
+    </div>
+    <!-- Ligne des valeurs et retours -->
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <!-- Seuil jour -->
+        <div style="flex: 1; display: flex; align-items: center; gap: 4px;">
+            <input type="number" id="luxDayInput" step="50" style="width: 80px;" disabled>
+            <span class="feedback-label">↺</span>
+            <span id="luxDayFeedback" class="feedback-value">--</span><span>lx</span>
         </div>
+        <!-- Seuil nuit -->
+        <div style="flex: 1; display: flex; align-items: center; gap: 4px;">
+            <input type="number" id="luxNightInput" step="50" style="width: 80px;" disabled>
+            <span class="feedback-label">↺</span>
+            <span id="luxNightFeedback" class="feedback-value">--</span><span>lx</span>
+        </div>
+        <!-- Mode J/N : retour uniquement -->
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span class="feedback-label">↺</span>
+            <span id="modeJnFeedback" class="feedback-value">--</span>
+        </div>
+    </div>
+</div>
 
         <div class="control-row"><label>🚪 Trappes</label><div class="inline-buttons">
             <button id="trappesOpenBtn" class="trappes-btn" disabled>Ouvrir</button>
@@ -135,10 +160,12 @@
     const PPPV_CHAR_UUID    = "f8a0b001-0018-0018-0018-000000000018";
     const BAT_STATUS_CHAR_UUID = "f9a0b001-0019-0019-0019-000000000019";
     const RES200W_FEEDBACK_CHAR_UUID = "faa0b001-0020-0020-0020-000000000020";
+    const MODE_JN_CHAR_UUID = "faa0b001-0021-0021-0021-000000000021";
 
     let device, server, service, commandChar;
     let storeChar, modeChar, consigneChar, fanFeedbackChar, trappesStateChar, res50wStateChar;
     let lumChar, luxDayChar, luxNightChar, vbatChar, ibatChar, vppvChar, pppvChar, batStatusChar, res200wChar;
+    let modeJnChar = null;
 
     // DOM elements
     const connectBtn = document.getElementById('connectBtn');
@@ -388,6 +415,18 @@ if (readVbatBtn) {
         const match = raw.match(/(\d+)/);
         if (match) { luxNightFeedbackSpan.innerText = match[0]; addLog(`🌙 Seuil nuit retour : ${match[0]} lx`); }
     }
+    function handleModeJnNotification(e) {
+        const raw = new TextDecoder().decode(e.target.value);
+        const match = raw.match(/[01]/);
+        if (match) {
+            const val = match[0];
+            const text = (val === "1") ? "Nuit" : "Jour";
+            document.getElementById('modeJnFeedback').innerText = text;
+            addLog(`⚙️ Mode J/N : ${text} (${val})`);
+        } else {
+            addLog(`⚠️ Mode J/N non reconnu : ${raw}`, true);
+        }
+    }
     function handleVbatNotification(e) {
         const raw = new TextDecoder().decode(e.target.value);
         const match = raw.match(/(\d+\.?\d*)/);
@@ -477,6 +516,7 @@ if (readVbatBtn) {
             pppvChar = await subscribe(PPPV_CHAR_UUID, handlePppvNotification);
             batStatusChar = await subscribe(BAT_STATUS_CHAR_UUID, handleBatStatusNotification);
             res200wChar = await subscribe(RES200W_FEEDBACK_CHAR_UUID, handleRes200wFeedback);
+            modeJnChar = await subscribe(MODE_JN_CHAR_UUID, handleModeJnNotification);
 
             for (let i = 0; i < SENSORS.length; i++) {
                 const s = SENSORS[i];
@@ -494,6 +534,8 @@ if (readVbatBtn) {
             if (consigneChar) { let v = await consigneChar.readValue(); handleConsigneFeedback({ target: { value: v } }); }
             if (luxDayChar) { let v = await luxDayChar.readValue(); handleLuxDayNotification({ target: { value: v } }); }
             if (luxNightChar) { let v = await luxNightChar.readValue(); handleLuxNightNotification({ target: { value: v } }); }
+            if (modeJnChar) { let v = await modeJnChar.readValue();  handleModeJnNotification({ target: { value: v } });
+}
 
             offBtn.disabled = false;
             consigneSlider.disabled = false;
