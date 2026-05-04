@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Séchoir – Contrôle BLE (Hybride)</title>
+    <title>Séchoir – Contrôle BLEramon (Hybride)</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
         body { background: #f0f4f8; margin: 0; padding: 10px; }
@@ -29,7 +29,7 @@
         .control-row label { width: 75px; font-weight: 600; font-size: 0.75rem; flex-shrink: 0; }
         input[type="range"] { flex: 2; min-width: 100px; height: 4px; margin: 0; }
         input[type="range"]:disabled { opacity: 0.5; }
-        input[type="number"] { width: 70px; padding: 4px 6px; border-radius: 20px; border: 1px solid #cbd5e1; font-size: 0.75rem; text-align: center; }
+        input[type="number"] { width: 100px; padding: 4px 6px; border-radius: 20px; border: 1px solid #cbd5e1; font-size: 0.75rem; text-align: center; }
         .slider-value { min-width: 32px; text-align: center; font-weight: 600; font-size: 0.75rem; flex-shrink: 0; }
         .feedback-value { min-width: 55px; text-align: center; background: #eef2ff; border-radius: 20px; padding: 2px 6px; font-size: 0.7rem; font-weight: 600; margin-left: 2px; flex-shrink: 0;white-space: nowrap; }
         .feedback-label { font-size: 0.7rem; margin-left: 2px; flex-shrink: 0; }
@@ -80,9 +80,9 @@
             <button id="modeManualBtn" class="mode-btn" disabled>Manuel</button>
         </div><span id="modeStatus" class="feedback-value">Mode: --</span></div>
 
-        <div class="control-row" style="display: flex; gap: 20px; align-items: center;">
-            <div><label style="width:auto;">☀️ Seuil jour</label><input type="number" id="luxDayInput" step="50" style="width:100px;" disabled><span class="feedback-label">↺</span><span id="luxDayFeedback" class="feedback-value">--</span><span>lx</span></div>
-            <div><label style="width:auto;">🌙 Seuil nuit</label><input type="number" id="luxNightInput" step="50" style="width:100px;" disabled><span class="feedback-label">↺</span><span id="luxNightFeedback" class="feedback-value">--</span><span>lx</span></div>
+        <div class="control-row" style="display: flex; gap: 10px; align-items: center;">
+            <div><label style="width:auto;">☀️ Seuil jour</label><input type="number" id="luxDayInput" step="50" style="width:70px;" disabled><span class="feedback-label">↺</span><span id="luxDayFeedback" class="feedback-value">--</span><span>lx</span></div>
+            <div><label style="width:auto;">🌙 Seuil nuit</label><input type="number" id="luxNightInput" step="50" style="width:70px;" disabled><span class="feedback-label">↺</span><span id="luxNightFeedback" class="feedback-value">--</span><span>lx</span></div>
         </div>
 
         <div class="control-row"><label>🚪 Trappes</label><div class="inline-buttons">
